@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="author" content="Braeden Diaz" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+        <link rel="stylesheet" href="/public/css/main.css" />
+
+        <title>Sign In</title>
+    </head>
+    <body>
+        <div id="main-content">
+            <div class="row">
+                <div class="col-12">
+                    <form action="/signin" method="POST">
+                        <label for="usernameTextBox">Username</label><br />
+                        <input type="text" name="usernameTextBox" /><br />
+                        <label for="passwordTextBox">Password</label><br />
+                        <input type="password" name="passwordTextBox" /><br />
+                        <input type="submit" value="Submit" />
+                    </form>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

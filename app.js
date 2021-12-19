@@ -1,15 +1,10 @@
 "use strict";
 
 const http = require("http");
-const fs = require("fs");
-const util = require("util");
 
 const { SERVER_PORT } = require("./config/config");
+const helpers = require("./helpers/helpers");
 
-function readFileV2(file)
-{
-    return util.promisify(fs.readFile)(file);
-}
 
 async function handleGetRequests(req, res)
 {
@@ -18,24 +13,76 @@ async function handleGetRequests(req, res)
 
     if (pathname === "/")
     {
-        const indexHTML = await readFileV2("./views/index.html");
+        const indexHTML = await helpers.readFileV2("./views/index.html");
         res.writeHead(200, {"Content-Type": "text/html"});
         res.write(indexHTML);
-        res.end();
+    }
+    else if (pathname === "/signin")
+    {
+        const signinHTML = await helpers.readFileV2("./views/signin.html");
+        res.writeHead(200, {"Content-Type": "text/html"});
+        res.write(signinHTML);
     }
     else if (pathname.includes("/public/css/"))
     {
-        const cssFile = await readFileV2("./" + pathname);
+        const cssFile = await helpers.readFileV2("./" + pathname);
         res.writeHead(200, {"Content-Type": "text/css"});
         res.write(cssFile);
-        res.end();
     }
     else
     {
         res.writeHead(404, {"Content-Type": "text/html"});
         res.write("404 File Not Found.");
-        res.end();
     }
+
+    res.end();
+}
+
+async function handlePostRequests(req, res)
+{
+    const requestURL = new URL(req.url, `http://${req.headers.host}`);
+    const pathname = requestURL.pathname;
+
+    if (pathname === "/signin")
+    {
+        // Short way of handling a Promise
+        const formDataMap = await helpers.parseRequestDataV2(req);
+        console.log("Finished Reading Data:");
+        console.log(formDataMap);
+        res.writeHead(200, {"Content-Type": "text/html"});
+
+
+        // Old way using a callback
+        // helpers.parseRequestData(req, (error, value) => {
+        //     if (error)
+        //     {
+        //         console.log(error);
+        //     }
+
+        //     console.log(value.get("usernameTextBox"));
+        //     res.writeHead(200, {"Content-Type": "text/html"});
+        // });
+
+
+        // Long way of handling a promise
+        // helpers.parseRequestDataV2(req)
+        // .then(value => {
+        //     console.log("Passed");
+        //     console.log(value);
+        //     res.writeHead(200, {"Content-Type": "text/html"});
+        // })
+        // .catch(error => {
+        //     console.log(error);
+        //     res.writeHead(200, {"Content-Type": "text/html"});
+        // })
+    }
+    else
+    {
+        res.writeHead(405, {"Content-Type": "text/html"});
+        res.write("405 Method Not Allowed.");
+    }
+
+    res.end();
 }
 
 const server = http.createServer((req, res) => {
@@ -46,9 +93,7 @@ const server = http.createServer((req, res) => {
             handleGetRequests(req, res);
             break;
         case "POST":
-            res.writeHead(405, {"Content-Type": "text/html"});
-            res.write("405 Method Not Allowed.");
-            res.end();
+            handlePostRequests(req, res);
             break;
         case "PUT":
             res.writeHead(405, {"Content-Type": "text/html"});
