@@ -23,6 +23,13 @@ async function handleGetRequests(req, res)
         res.write(indexHTML);
         res.end();
     }
+    else if (pathname.includes("/public/css/"))
+    {
+        const cssFile = await readFileV2("./" + pathname);
+        res.writeHead(200, {"Content-Type": "text/css"});
+        res.write(cssFile);
+        res.end();
+    }
     else
     {
         res.writeHead(404, {"Content-Type": "text/html"});
