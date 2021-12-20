@@ -2,8 +2,9 @@
 
 const http = require("http");
 
-const { SERVER_PORT } = require("./config/config");
+const config = require("./config/config");
 const helpers = require("./helpers/helpers");
+const db = require("./config/db");
 
 
 async function handleGetRequests(req, res)
@@ -46,9 +47,10 @@ async function handlePostRequests(req, res)
     if (pathname === "/signin")
     {
         // Short way of handling a Promise
-        const formDataMap = await helpers.parseRequestDataV2(req);
+        const formDataMap = await helpers.parseRequestData(req);
         console.log("Finished Reading Data:");
         console.log(formDataMap);
+        db.showDatabases();
         res.writeHead(200, {"Content-Type": "text/html"});
 
 
@@ -112,7 +114,7 @@ const server = http.createServer((req, res) => {
     }
 });
 
-server.listen(SERVER_PORT, () => {
+server.listen(config.WEB_SERVER_PORT, () => {
     const { address, port } = server.address();
     console.log(`Web server is listening at ${address}:${port}...`);
 });
