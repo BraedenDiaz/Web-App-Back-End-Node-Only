@@ -5,6 +5,7 @@ const http = require("http");
 const config = require("./config/config");
 const helpers = require("./helpers/helpers");
 const db = require("./config/db");
+const validators = require("./helpers/validators");
 
 
 async function handleGetRequests(req, res)
@@ -48,35 +49,16 @@ async function handlePostRequests(req, res)
     {
         // Short way of handling a Promise
         const formDataMap = await helpers.parseRequestData(req);
+        const { usernnameTextBox, passwordTextBox } = Object.fromEntries(formDataMap);
+        
         console.log("Finished Reading Data:");
         console.log(formDataMap);
-        db.showDatabases();
+
+        const hashedPasswordObj = validators.saltAndHashPassword(passwordTextBox);
+
+        //db.showDatabases();
         res.writeHead(200, {"Content-Type": "text/html"});
-
-
-        // Old way using a callback
-        // helpers.parseRequestData(req, (error, value) => {
-        //     if (error)
-        //     {
-        //         console.log(error);
-        //     }
-
-        //     console.log(value.get("usernameTextBox"));
-        //     res.writeHead(200, {"Content-Type": "text/html"});
-        // });
-
-
-        // Long way of handling a promise
-        // helpers.parseRequestDataV2(req)
-        // .then(value => {
-        //     console.log("Passed");
-        //     console.log(value);
-        //     res.writeHead(200, {"Content-Type": "text/html"});
-        // })
-        // .catch(error => {
-        //     console.log(error);
-        //     res.writeHead(200, {"Content-Type": "text/html"});
-        // })
+        
     }
     else
     {
