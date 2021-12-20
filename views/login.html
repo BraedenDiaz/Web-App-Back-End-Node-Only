@@ -7,17 +7,17 @@
 
         <link rel="stylesheet" href="/public/css/main.css" />
 
-        <title>Sign In</title>
+        <title>Login</title>
     </head>
     <body>
         <div id="main-content">
             <div class="row">
                 <div class="col-12">
-                    <form action="/signin" method="POST">
-                        <label for="usernameTextBox">Username</label><br />
-                        <input type="text" name="usernameTextBox" /><br />
-                        <label for="passwordTextBox">Password</label><br />
-                        <input type="password" name="passwordTextBox" /><br />
+                    <form action="/login" method="POST">
+                        <label for="username">Username</label><br />
+                        <input type="text" name="username" /><br />
+                        <label for="password">Password</label><br />
+                        <input type="password" name="password" /><br />
                         <input type="submit" value="Submit" />
                     </form>
                 </div>

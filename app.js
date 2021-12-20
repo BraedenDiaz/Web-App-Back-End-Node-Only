@@ -19,11 +19,17 @@ async function handleGetRequests(req, res)
         res.writeHead(200, {"Content-Type": "text/html"});
         res.write(indexHTML);
     }
-    else if (pathname === "/signin")
+    else if (pathname === "/login")
     {
-        const signinHTML = await helpers.readFileV2("./views/signin.html");
+        const loginHTML = await helpers.readFileV2("./views/login.html");
         res.writeHead(200, {"Content-Type": "text/html"});
-        res.write(signinHTML);
+        res.write(loginHTML);
+    }
+    else if (pathname === "/register")
+    {
+        const registerHTML = await helpers.readFileV2("./views/register.html");
+        res.writeHead(200, {"Content-Type": "text/html"});
+        res.write(registerHTML);
     }
     else if (pathname.includes("/public/css/"))
     {
@@ -45,20 +51,40 @@ async function handlePostRequests(req, res)
     const requestURL = new URL(req.url, `http://${req.headers.host}`);
     const pathname = requestURL.pathname;
 
-    if (pathname === "/signin")
+    if (pathname === "/register")
     {
-        // Short way of handling a Promise
         const formDataMap = await helpers.parseRequestData(req);
-        const { usernnameTextBox, passwordTextBox } = Object.fromEntries(formDataMap);
+        const { username, password } = Object.fromEntries(formDataMap);
+        const hashedPasswordObj = await validators.saltAndHashPassword(password);
+        const { hashedPassword, salt, iterations } = hashedPasswordObj;
         
-        console.log("Finished Reading Data:");
+        console.log("Received Form Data:");
         console.log(formDataMap);
 
-        const hashedPasswordObj = validators.saltAndHashPassword(passwordTextBox);
+        console.log(`Username: ${username}\nPassword: ${password}`);
+        //console.log(`Hashed Password: ${hashedPassword}`);
 
-        //db.showDatabases();
-        res.writeHead(200, {"Content-Type": "text/html"});
+        if (!validators.validateUsername(username))
+        {
+            res.writeHead(200, {"Content-Type": "text/html"});
+            res.write("Invalid Username.");
+        }
+        else if (!validators.validatePassword(password))
+        {
+            res.writeHead(200, {"Content-Type": "text/html"});
+            res.write("Invalid Password.");
+        }
+        else
+        {
+            res.writeHead(200, {"Content-Type": "text/html"});
+            res.write("<h1>Registration Completed Successfully!</h1>");
+        }
         
+    }
+    else if (pathname === "/login")
+    {
+        res.writeHead(200, {"Content-Type": "text/html"});
+        res.write("<h1>Login Successful!</h1>");
     }
     else
     {
