@@ -10,21 +10,7 @@ const databaseConnectionPool = mysql.createPool({
     database: config.MySQL_DB_NAME
 });
 
-
-function showDatabases()
-{
-    databaseConnectionPool.query("SHOW DATABASES;", (err, result) => {
-        if (err)
-        {
-            throw new Error(`Show Databases Error: ${err}`);
-        }
-
-        console.log("Databases:");
-        console.log(result);
-    });
-}
-
-function userExists(username)
+async function userExists(username)
 {
     const queryString = `SELECT username FROM users WHERE username='${username}';`;
 
@@ -34,9 +20,6 @@ function userExists(username)
             {
                 reject(`Database User Exists Query Error: ${err}`);
             }
-    
-            console.log("\nUser Exists Result");
-            console.log(result);
     
             return resolve(result.length > 0);
         });
@@ -60,10 +43,29 @@ async function insertNewUser(username, password)
         {
             throw new Error(`Database Insert Error: ${err}`);
         }
-    })
+    });
+}
+
+async function getUserPassword(username)
+{
+    const promise = new Promise((resolve, reject) => {
+        const queryString = `SELECT password FROM users WHERE username = '${username}';`;
+
+        databaseConnectionPool.query(queryString, (err, result) => {
+            if (err)
+            {
+                reject(`Get User Password Error: ${err}`);
+            }
+    
+            resolve(result);
+        });
+    });
+
+    return promise;
 }
 
 module.exports = {
-    showDatabases: showDatabases,
-    insertNewUser: insertNewUser
+    userExists: userExists,
+    insertNewUser: insertNewUser,
+    getUserPassword: getUserPassword
 }

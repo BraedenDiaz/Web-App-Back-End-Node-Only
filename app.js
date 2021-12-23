@@ -6,6 +6,9 @@ const config = require("./config/config");
 const helpers = require("./helpers/helpers");
 const db = require("./config/db");
 const validators = require("./helpers/validators");
+const cookie = require("./helpers/cookie");
+const { User } = require("./models/User");
+
 
 
 async function handleGetRequests(req, res)
@@ -86,8 +89,31 @@ async function handlePostRequests(req, res)
     }
     else if (pathname === "/login")
     {
-        res.writeHead(200, {"Content-Type": "text/html"});
-        res.write("<h1>Login Successful!</h1>");
+        const formDataMap = await helpers.parseRequestData(req);
+        const { username, password } = Object.fromEntries(formDataMap);
+
+        if (await db.userExists(username))
+        {
+            let userHashedAndSaltedPassword = await db.getUserPassword(username);
+            userHashedAndSaltedPassword = userHashedAndSaltedPassword[0].password;
+
+            if (await validators.authenticatePassword(userHashedAndSaltedPassword, password))
+            {
+                cookie.setCookieValue(res, "Hello", "World");
+                res.writeHead(200, {"Content-Type": "text/html"});
+                res.write("<h1>Login Successful!</h1>");
+            }
+            else
+            {
+                res.writeHead(200, {"Content-Type": "text/html"});
+                res.write("<h1>Wrong password!</h1>");
+            }
+        }
+        else
+        {
+            res.writeHead(200, {"Content-Type": "text/html"});
+            res.write("<h1>User does not exist!</h1>");
+        }
     }
     else
     {
@@ -99,7 +125,6 @@ async function handlePostRequests(req, res)
 }
 
 const server = http.createServer((req, res) => {
-
     switch (req.method)
     {
         case "GET":

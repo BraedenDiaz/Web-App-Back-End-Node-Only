@@ -2,7 +2,7 @@
 const crypto = require("crypto");
 const config = require("../config/config");
 
-function saltAndHashPassword(password)
+async function saltAndHashPassword(password)
 {
     const salt = crypto.randomBytes(config.SALT_BYTE_SIZE).toString("hex");
 
@@ -20,7 +20,7 @@ function saltAndHashPassword(password)
     return promise;
 }
 
-function authenticatePassword(hashedPasswordAndSalt, enteredPassword)
+async function authenticatePassword(hashedPasswordAndSalt, enteredPassword)
 {
     const hashedPassword = hashedPasswordAndSalt.substr(0, hashedPasswordAndSalt.length - config.SALT_BYTE_SIZE * 2);
     const salt = hashedPasswordAndSalt.substr(-(config.SALT_BYTE_SIZE * 2));
