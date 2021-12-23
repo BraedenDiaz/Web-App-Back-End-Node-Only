@@ -1,33 +1,32 @@
 
 const crypto = require("crypto");
+const config = require("../config/config");
 
 function saltAndHashPassword(password)
 {
-    const salt = crypto.randomBytes(128).toString("base64");
-    const iterations = 100000;
+    const salt = crypto.randomBytes(config.SALT_BYTE_SIZE).toString("hex");
 
     const promise = new Promise((resolve, reject) => {
-        crypto.pbkdf2(password, salt, iterations, 512, "sha512", (err, derivedKey) => {
+        crypto.pbkdf2(password, salt, config.PASSWORD_HASH_ITERATIONS, config.PASSWORD_HASH_BYTE_LENGTH, config.PASSWORD_HASH_DIGEST, (err, derivedKey) => {
             if (err)
             {
                 reject(`Password Salt and Hash Error: ${err}`);
             }
     
-            resolve({
-                hashedPassword: derivedKey.toString("hex"),
-                salt: salt.toString("hex"),
-                iterations: iterations
-            });
+            resolve(derivedKey.toString("hex") + salt);
         });
     });
 
     return promise;
 }
 
-function authenticatePassword(hashedPassword, salt, iterations, enteredPassword)
+function authenticatePassword(hashedPasswordAndSalt, enteredPassword)
 {
+    const hashedPassword = hashedPasswordAndSalt.substr(0, hashedPasswordAndSalt.length - config.SALT_BYTE_SIZE * 2);
+    const salt = hashedPasswordAndSalt.substr(-(config.SALT_BYTE_SIZE * 2));
+
     const promise = new Promise((resolve, reject) => {
-        crypto.pbkdf2(enteredPassword, salt, iterations, 512, "sha512", (err, derivedKey) => {
+        crypto.pbkdf2(enteredPassword, salt, config.PASSWORD_HASH_ITERATIONS, config.PASSWORD_HASH_BYTE_LENGTH, config.PASSWORD_HASH_DIGEST, (err, derivedKey) => {
             if (err)
             {
                 reject(`Authenticate Password Error: ${err}`);

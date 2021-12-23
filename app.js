@@ -55,14 +55,7 @@ async function handlePostRequests(req, res)
     {
         const formDataMap = await helpers.parseRequestData(req);
         const { username, password } = Object.fromEntries(formDataMap);
-        const hashedPasswordObj = await validators.saltAndHashPassword(password);
-        const { hashedPassword, salt, iterations } = hashedPasswordObj;
-        
-        console.log("Received Form Data:");
-        console.log(formDataMap);
-
-        console.log(`Username: ${username}\nPassword: ${password}`);
-        //console.log(`Hashed Password: ${hashedPassword}`);
+        const hashedPasswordAndSalt = await validators.saltAndHashPassword(password);
 
         if (!validators.validateUsername(username))
         {
@@ -76,8 +69,18 @@ async function handlePostRequests(req, res)
         }
         else
         {
-            res.writeHead(200, {"Content-Type": "text/html"});
-            res.write("<h1>Registration Completed Successfully!</h1>");
+            try
+            {
+                await db.insertNewUser(username, hashedPasswordAndSalt);
+                res.writeHead(200, {"Content-Type": "text/html"});
+                res.write("<h1>Registration Completed Successfully!</h1>");
+            }
+            catch(err)
+            {
+                res.writeHead(200, {"Content-Type": "text/html"});
+                res.write(`<h1>Error: ${err.message}</h1>`);
+            }
+                
         }
         
     }
