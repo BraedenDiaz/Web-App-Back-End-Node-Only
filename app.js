@@ -6,7 +6,8 @@ const config = require("./config/config");
 const helpers = require("./helpers/helpers");
 const db = require("./config/db");
 const validators = require("./helpers/validators");
-const cookie = require("./helpers/cookie");
+const cookies = require("./helpers/cookies");
+const sessions = require("./helpers/sessions");
 const { User } = require("./models/User");
 
 
@@ -99,7 +100,7 @@ async function handlePostRequests(req, res)
 
             if (await validators.authenticatePassword(userHashedAndSaltedPassword, password))
             {
-                cookie.setCookieValue(res, "Hello", "World");
+                sessions.createSessionCookie(res);
                 res.writeHead(200, {"Content-Type": "text/html"});
                 res.write("<h1>Login Successful!</h1>");
             }
