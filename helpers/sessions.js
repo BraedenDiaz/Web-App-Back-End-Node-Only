@@ -1,7 +1,9 @@
 
 const crypto = require("crypto");
+
 const config = require("../config/config");
 const cookies = require("./cookies");
+const db = require("../config/db");
 
 function createSessionCookie(res)
 {
@@ -28,8 +30,38 @@ function createSessionCookie(res)
         config.SESSION_COOKIE_PATH,
         sessionCookIeStringOptions
     );
+
+    return randomSecretBytes;
+}
+
+async function createNewSessionForUser(res, username)
+{
+    const sessionID = createSessionCookie(res);
+    await db.insertNewUserSession(sessionID, username);
+}
+
+async function hasValidSession(req)
+{
+    const sessionID = cookies.getCookie(req, "sessionID");
+    let username = null;
+
+    if (!sessionID)
+    {
+        return false;
+    }
+
+    username = await db.getUserFromSession(sessionID);
+
+    if (!username)
+    {
+        return false;
+    }
+
+    return username;
+
 }
 
 module.exports = {
-    createSessionCookie: createSessionCookie
+    createNewSessionForUser: createNewSessionForUser,
+    hasValidSession: hasValidSession
 };

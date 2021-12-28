@@ -16,12 +16,23 @@ async function handleGetRequests(req, res)
 {
     const requestURL = new URL(req.url, `http://${req.headers.host}`);
     const pathname = requestURL.pathname;
+    const username = await sessions.hasValidSession(req);
 
     if (pathname === "/")
     {
         const indexHTML = await helpers.readFileV2("./views/index.html");
-        res.writeHead(200, {"Content-Type": "text/html"});
-        res.write(indexHTML);
+
+        if (username !== false)
+        {
+            // TODO: Return dynamic content instead
+            res.writeHead(200, {"Content-Type": "text/html"});
+            res.write(indexHTML);
+        }
+        else
+        {
+            res.writeHead(200, {"Content-Type": "text/html"});
+            res.write(indexHTML);
+        }
     }
     else if (pathname === "/login")
     {
@@ -95,12 +106,11 @@ async function handlePostRequests(req, res)
 
         if (await db.userExists(username))
         {
-            let userHashedAndSaltedPassword = await db.getUserPassword(username);
-            userHashedAndSaltedPassword = userHashedAndSaltedPassword[0].password;
+            const userHashedAndSaltedPassword = await db.getUserPassword(username);
 
             if (await validators.authenticatePassword(userHashedAndSaltedPassword, password))
             {
-                sessions.createSessionCookie(res);
+                await sessions.createNewSessionForUser(res, username);
                 res.writeHead(200, {"Content-Type": "text/html"});
                 res.write("<h1>Login Successful!</h1>");
             }

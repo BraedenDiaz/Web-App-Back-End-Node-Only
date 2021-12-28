@@ -1,6 +1,8 @@
 "use strict";
 
 const mysql = require("mysql2");
+
+const helpers = require("../helpers/helpers");
 const config = require("./config");
 
 const databaseConnectionPool = mysql.createPool({
@@ -12,7 +14,12 @@ const databaseConnectionPool = mysql.createPool({
 
 async function userExists(username)
 {
-    const queryString = `SELECT username FROM users WHERE username='${username}';`;
+    const queryString = 
+    `
+        SELECT username
+        FROM Users
+        WHERE username='${username}';
+    `;
 
     const promise = new Promise((resolve, reject) => {
         databaseConnectionPool.query(queryString, (err, result) => {
@@ -31,7 +38,11 @@ async function userExists(username)
 
 async function insertNewUser(username, password)
 {
-    const queryString = `INSERT INTO users (username, password) VALUES ('${username}', '${password}');`;
+    const queryString = 
+    `
+        INSERT INTO Users (username, password)
+        VALUES ('${username}', '${password}');
+    `;
 
     if (await userExists(username))
     {
@@ -46,26 +57,120 @@ async function insertNewUser(username, password)
     });
 }
 
+async function getUserID(username)
+{
+    const promise = new Promise((resolve, reject) => {
+        const getUserIdQuery = 
+        `
+            SELECT userID
+            FROM Users
+            WHERE username = '${username}';
+        `;
+    
+        databaseConnectionPool.query(getUserIdQuery, (err, result) => {
+            if (err)
+            {
+                reject(`Get User Id Error: ${err}`);
+            }
+
+            if (result.length === 0)
+            {
+                resolve(null);
+            }
+
+            resolve(result[0].userID);
+        });
+
+    });
+
+    return promise;
+}
+
 async function getUserPassword(username)
 {
     const promise = new Promise((resolve, reject) => {
-        const queryString = `SELECT password FROM users WHERE username = '${username}';`;
+        const queryString =
+        `
+            SELECT password
+            FROM Users
+            WHERE username = '${username}';
+        `;
 
         databaseConnectionPool.query(queryString, (err, result) => {
             if (err)
             {
                 reject(`Get User Password Error: ${err}`);
             }
+
+            if (result.length === 0)
+            {
+                resolve(null);
+            }
     
-            resolve(result);
+            resolve(result[0].password);
         });
     });
 
     return promise;
 }
 
+async function insertNewUserSession(sessionID, username)
+{
+    const userID = await getUserID(username);
+    const expirationDate = new Date(Date.now() + helpers.daysToMilliseconds(config.SESSION_DAYS_UNTIL_EXPIRE));
+    let [ utcDate, utcTime ] = expirationDate.toISOString().split("T");
+    utcTime = utcTime.substring(0, utcTime.lastIndexOf(":") + 3);
+
+    const insertQuery =
+    `
+        INSERT INTO Sessions (sessionID, userID, expires)
+        VALUES ('${sessionID}', ${userID}, '${utcDate + ' ' + utcTime}');
+    `;
+
+    databaseConnectionPool.query(insertQuery, (err, result) => {
+        if (err)
+        {
+            throw new Error(`Database Insert Session Error: ${err}`);
+        }
+    });
+}
+
+async function getUserFromSession(sessionID)
+{
+    const queryString =
+    `
+        SELECT Users.username
+        FROM Users
+        JOIN Sessions
+            ON Users.userID = Sessions.userID
+        WHERE Sessions.sessionID = '${sessionID}'
+            AND Sessions.expires > UTC_TIMESTAMP();
+    `;
+
+    const promise = new Promise((resolve, reject) => {
+        databaseConnectionPool.query(queryString, (err, result) => {
+            if (err)
+            {
+                reject(`Database Get User From Session Error: ${err}`);
+            }
+
+            if (result.length === 0)
+            {
+                resolve(null);
+            }
+    
+            resolve(result[0].username);
+        });
+    });
+
+    return promise;
+
+}
+
 module.exports = {
     userExists: userExists,
     insertNewUser: insertNewUser,
-    getUserPassword: getUserPassword
+    getUserPassword: getUserPassword,
+    insertNewUserSession: insertNewUserSession,
+    getUserFromSession: getUserFromSession
 }

@@ -9,6 +9,17 @@ function readFileV2(file)
     return promisify(readFile)(file);
 }
 
+function daysToMilliseconds(days)
+{
+    return 1000 * 60 * 60 * 24 * days;
+}
+
+function hoursToMilliseconds(hours)
+{
+    return 1000 * 60 * 60 * hours;
+}
+
+
 // Old way using a callback
 // function parseRequestData(req, callback)
 // {
@@ -58,5 +69,9 @@ function parseRequestData(req)
 
 }
 
-module.exports.parseRequestData = parseRequestData;
-module.exports.readFileV2 = readFileV2;
+module.exports = {
+    readFileV2: readFileV2,
+    daysToMilliseconds: daysToMilliseconds,
+    hoursToMilliseconds: hoursToMilliseconds,
+    parseRequestData: parseRequestData
+};

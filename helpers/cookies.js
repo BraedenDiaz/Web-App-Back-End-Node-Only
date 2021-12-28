@@ -1,8 +1,5 @@
 
-function daysToMilliseconds(days)
-{
-    return 1000 * 60 * 60 * 24 * days;
-}
+const helpers = require("./helpers");
 
 function setCookieValue(res, cookieName, value, daysUntilExpire = null, path, additionalOptionsString)
 {
@@ -11,16 +8,13 @@ function setCookieValue(res, cookieName, value, daysUntilExpire = null, path, ad
 
     if (daysUntilExpire)
     {
-        futureDate = new Date(Date.now() + daysToMilliseconds(daysUntilExpire)).toUTCString();
+        futureDate = new Date(Date.now() + helpers.daysToMilliseconds(daysUntilExpire)).toUTCString();
         cookieString = `${cookieName}=${value}; expires=${futureDate}; ${additionalOptionsString} path=${path}`;
     }
     else
     {
         cookieString = `${cookieName}=${value}; ${additionalOptionsString} path=${path}`;
     }
-
-    console.log("Cookie String:");
-    console.log(cookieString);
 
     res.setHeader("Set-Cookie", cookieString);
 }
@@ -29,12 +23,9 @@ function getCookie(req, cookieName)
 {
     const cookieStringArr = req.headers.cookie.split(";");
 
-    console.log(cookieStringArr);
-
     for (let cookieString of cookieStringArr)
     {
         cookieString = cookieString.trim();
-        console.log(cookieString);
 
         if (cookieString.startsWith(cookieName))
         {
