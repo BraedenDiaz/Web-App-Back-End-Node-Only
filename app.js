@@ -1,6 +1,7 @@
 "use strict";
 
 const http = require("http");
+const handlebars = require("handlebars");
 
 const config = require("./config/config");
 const helpers = require("./helpers/helpers");
@@ -20,25 +21,50 @@ async function handleGetRequests(req, res)
 
     if (pathname === "/")
     {
-        const indexHTML = await helpers.readFileV2("./views/index.html");
-
+        const indexHandlebars = await helpers.readFileV2("./views/index.handlebars");
+        const handlebarsTemplate = handlebars.compile(indexHandlebars.toString());
         if (username !== false)
         {
-            // TODO: Return dynamic content instead
+            const handlebarsTemplateObj = {
+                username: username,
+                register: '',
+                loginLogout: new handlebars.SafeString('<a href="/logout" class="right">Logout</a>')
+            };
+        
+            const finalHTML = handlebarsTemplate(handlebarsTemplateObj);
             res.writeHead(200, {"Content-Type": "text/html"});
-            res.write(indexHTML);
+            res.write(finalHTML);
         }
         else
         {
+            const handlebarsTemplateObj = {
+                username: 'Guest',
+                register: new handlebars.SafeString('<a href="/register" class="right">Register</a>'),
+                loginLogout: new handlebars.SafeString('<a href="/login" class="right">Login</a>')
+            };
+
+            const finalHTML = handlebarsTemplate(handlebarsTemplateObj);
             res.writeHead(200, {"Content-Type": "text/html"});
-            res.write(indexHTML);
+            res.write(finalHTML);
         }
     }
     else if (pathname === "/login")
     {
-        const loginHTML = await helpers.readFileV2("./views/login.html");
-        res.writeHead(200, {"Content-Type": "text/html"});
-        res.write(loginHTML);
+        if (username)
+        {
+            res.writeHead(302, {"Location": "/"});
+        }
+        else
+        {
+            const loginHTML = await helpers.readFileV2("./views/login.html");
+            res.writeHead(200, {"Content-Type": "text/html"});
+            res.write(loginHTML);
+        }
+    }
+    else if (pathname === "/logout")
+    {
+        sessions.destroyUserSession(res, cookies.getCookie(req, "sessionID"));
+        res.writeHead(302, {"Location": "/"});
     }
     else if (pathname === "/register")
     {
@@ -51,6 +77,12 @@ async function handleGetRequests(req, res)
         const cssFile = await helpers.readFileV2("./" + pathname);
         res.writeHead(200, {"Content-Type": "text/css"});
         res.write(cssFile);
+    }
+    else if (pathname.includes("/public/javascript/"))
+    {
+        const javascriptFile = await helpers.readFileV2("./" + pathname);
+        res.writeHead(200, {"Content-Type": "text/javascript"});
+        res.write(javascriptFile);
     }
     else
     {
@@ -110,9 +142,8 @@ async function handlePostRequests(req, res)
 
             if (await validators.authenticatePassword(userHashedAndSaltedPassword, password))
             {
-                await sessions.createNewSessionForUser(res, username);
-                res.writeHead(200, {"Content-Type": "text/html"});
-                res.write("<h1>Login Successful!</h1>");
+                await sessions.createUserSession(res, username);
+                res.writeHead(302, {"Location": "/"});
             }
             else
             {

@@ -34,10 +34,16 @@ function createSessionCookie(res)
     return randomSecretBytes;
 }
 
-async function createNewSessionForUser(res, username)
+async function createUserSession(res, username)
 {
     const sessionID = createSessionCookie(res);
     await db.insertNewUserSession(sessionID, username);
+}
+
+async function destroyUserSession(res, sessionID)
+{
+    cookies.deleteCookie(res, "sessionID");
+    await db.removeUserSession(sessionID);
 }
 
 async function hasValidSession(req)
@@ -52,6 +58,9 @@ async function hasValidSession(req)
 
     username = await db.getUserFromSession(sessionID);
 
+    console.log("Username in Session:");
+    console.log(username);
+
     if (!username)
     {
         return false;
@@ -62,6 +71,7 @@ async function hasValidSession(req)
 }
 
 module.exports = {
-    createNewSessionForUser: createNewSessionForUser,
-    hasValidSession: hasValidSession
+    createUserSession: createUserSession,
+    hasValidSession: hasValidSession,
+    destroyUserSession: destroyUserSession
 };

@@ -76,6 +76,7 @@ async function getUserID(username)
             if (result.length === 0)
             {
                 resolve(null);
+                return;
             }
 
             resolve(result[0].userID);
@@ -105,6 +106,7 @@ async function getUserPassword(username)
             if (result.length === 0)
             {
                 resolve(null);
+                return;
             }
     
             resolve(result[0].password);
@@ -157,6 +159,7 @@ async function getUserFromSession(sessionID)
             if (result.length === 0)
             {
                 resolve(null);
+                return;
             }
     
             resolve(result[0].username);
@@ -167,10 +170,27 @@ async function getUserFromSession(sessionID)
 
 }
 
+async function removeUserSession(sessionID)
+{
+    const queryString =
+    `
+        DELETE FROM Sessions
+        WHERE sessionID = '${sessionID}';
+    `;
+
+    databaseConnectionPool.query(queryString, (err, result) => {
+        if (err)
+        {
+            throw new Error(`Database Remove Session Error: ${err}`);
+        }
+    });
+}
+
 module.exports = {
     userExists: userExists,
     insertNewUser: insertNewUser,
     getUserPassword: getUserPassword,
     insertNewUserSession: insertNewUserSession,
-    getUserFromSession: getUserFromSession
+    getUserFromSession: getUserFromSession,
+    removeUserSession: removeUserSession
 }

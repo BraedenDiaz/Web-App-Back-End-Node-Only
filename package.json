@@ -10,6 +10,7 @@
   "author": "Braeden Diaz",
   "license": "MIT",
   "dependencies": {
+    "handlebars": "^4.7.7",
     "mysql2": "^2.3.3"
   }
 }

@@ -21,6 +21,11 @@ function setCookieValue(res, cookieName, value, daysUntilExpire = null, path, ad
 
 function getCookie(req, cookieName)
 {
+    if (!req.headers || !req.headers.cookie)
+    {
+        return null;
+    }
+
     const cookieStringArr = req.headers.cookie.split(";");
 
     for (let cookieString of cookieStringArr)

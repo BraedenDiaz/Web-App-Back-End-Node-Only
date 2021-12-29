@@ -20,15 +20,18 @@
             <a href="#">Forums</a>
             <a href="#">News</a>
             <a href="#">About</a>
-            <a href="/register" class="right">Register</a>
-            <a href="/login" class="right">Login</a>
+            {{ register }}
+            {{ loginLogout }}
         </div>
         <div id="main-content">
             <div class="row">
-                <div class="col-lg-6" style="background-color: blue; color: white;">
+                <div class="col-lg-4" style="background-color: blue; color: white;">
                     This is some text.
                 </div>
-                <div class="col-lg-6" style="background-color: black; color: white;">
+                <div class="col-lg-4" style="background-color: black; color: white;">
+                    Hello {{username}}!
+                </div>
+                <div class="col-lg-4" style="background-color: black; color: white;">
                     This is some text.
                 </div>
             </div>
@@ -47,5 +50,6 @@
         <div id="footer">
             <p>This is the footer.</p>
         </div>
+        <script src="/public/javascript/index.js" defer></script>
     </body>
 </html>
