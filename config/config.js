@@ -1,5 +1,11 @@
 "use strict";
 
+/**
+ * @author Braeden Diaz
+ * 
+ * Main configuration file used by all parts of the web server.
+ */
+
 module.exports = {
 
     // Web Server Configuration

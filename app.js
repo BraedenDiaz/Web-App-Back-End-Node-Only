@@ -1,5 +1,12 @@
 "use strict";
 
+/**
+ * @author Braeden Diaz
+ * 
+ * The main application file that runs and manages all parts of the server, and handles the
+ * top-level website routes.
+ */
+
 const http = require("http");
 const handlebars = require("handlebars");
 
@@ -11,18 +18,30 @@ const cookies = require("./helpers/cookies");
 const sessions = require("./helpers/sessions");
 const { User } = require("./models/User");
 
-
-
+/**
+ * A function which handles GET requests for the top-level paths of the website.
+ * 
+ * @param {http.IncomingMessage} req The HTTP Request Object.
+ * @param {http.ServerResponse} res The HTTP Reesponse Object.
+ */
 async function handleGetRequests(req, res)
 {
     const requestURL = new URL(req.url, `http://${req.headers.host}`);
     const pathname = requestURL.pathname;
     const username = await sessions.hasValidSession(req);
 
+    // Send the user the appriate webpage based on the requested path.
+    //
+    // A dynamic webpage may be sent on certain pages based on whether the user is logged
+    // in or not.
+    //
+    // Other supporting assets such as CSS, client-side JavaScript, etc, is also handled here.
     if (pathname === "/")
     {
         const indexHandlebars = await helpers.readFileV2("./views/index.handlebars");
         const handlebarsTemplate = handlebars.compile(indexHandlebars.toString());
+
+        // Send a dynamic homepage based on whether a user is logged in or not.
         if (username !== false)
         {
             const handlebarsTemplateObj = {
@@ -50,6 +69,7 @@ async function handleGetRequests(req, res)
     }
     else if (pathname === "/login")
     {
+        // If a user is already logged in, simply redirect them back to the homepage.
         if (username)
         {
             res.writeHead(302, {"Location": "/"});
@@ -93,17 +113,31 @@ async function handleGetRequests(req, res)
     res.end();
 }
 
+/**
+ * A function which handles POST requests for the top-level paths of the website.
+ * 
+ * @param {http.IncomingMessage} req The HTTP Request Object.
+ * @param {http.ServerResponse} res The HTTP Reesponse Object.
+ */
 async function handlePostRequests(req, res)
 {
     const requestURL = new URL(req.url, `http://${req.headers.host}`);
     const pathname = requestURL.pathname;
 
+    // handle the POST request and send the user to the approiate page.
+    //
+    // A dynamic webpage may be sent on certain pages based on whether the user is logged
+    // in or not.
     if (pathname === "/register")
     {
+        // Parse the registration data the user has entered
         const formDataMap = await helpers.parseRequestData(req);
         const { username, password } = Object.fromEntries(formDataMap);
+        // Obtain a hashed and salted version of the user's password
         const hashedPasswordAndSalt = await validators.saltAndHashPassword(password);
 
+        // Perform various validations on the user's input to make sure it's legal, valid,
+        // and not malicious before reaching the "else" branch where we use it.
         if (!validators.validateUsername(username))
         {
             res.writeHead(200, {"Content-Type": "text/html"});
@@ -116,6 +150,7 @@ async function handlePostRequests(req, res)
         }
         else
         {
+            // Insert the new user into the database.
             try
             {
                 await db.insertNewUser(username, hashedPasswordAndSalt);
@@ -124,8 +159,8 @@ async function handlePostRequests(req, res)
             }
             catch(err)
             {
-                res.writeHead(200, {"Content-Type": "text/html"});
-                res.write(`<h1>Error: ${err.message}</h1>`);
+                res.writeHead(503, {"Content-Type": "text/html"});
+                res.write(`<h1>503 Error: Service Unavailable. Try Again Later.</h1>`);
             }
                 
         }
@@ -133,28 +168,49 @@ async function handlePostRequests(req, res)
     }
     else if (pathname === "/login")
     {
+        // Parse the login data the user has entered
         const formDataMap = await helpers.parseRequestData(req);
         const { username, password } = Object.fromEntries(formDataMap);
 
-        if (await db.userExists(username))
+                // Perform various validations on the user's input to make sure it's legal, valid,
+        // and not malicious before reaching the "else" branch where we use it.
+        if (!validators.validateUsername(username))
         {
-            const userHashedAndSaltedPassword = await db.getUserPassword(username);
-
-            if (await validators.authenticatePassword(userHashedAndSaltedPassword, password))
+            res.writeHead(200, {"Content-Type": "text/html"});
+            res.write("Invalid Username.");
+        }
+        else if (!validators.validatePassword(password))
+        {
+            res.writeHead(200, {"Content-Type": "text/html"});
+            res.write("Invalid Password.");
+        }
+        else
+        {
+            // Check if the user exists
+            if (await db.userExists(username))
             {
-                await sessions.createUserSession(res, username);
-                res.writeHead(302, {"Location": "/"});
+                // Obtain the hashed and salted password for the user from the database
+                const userHashedAndSaltedPassword = await db.getUserPassword(username);
+
+                // Authenticate the password from the database with the one entered by the user
+                if (await validators.authenticatePassword(userHashedAndSaltedPassword, password))
+                {
+                    // If the passwor4d was successfully authenticated, create a new session for the
+                    // user and redirect them to the homepage.
+                    await sessions.createUserSession(res, username);
+                    res.writeHead(302, {"Location": "/"});
+                }
+                else
+                {
+                    res.writeHead(200, {"Content-Type": "text/html"});
+                    res.write("<h1>Wrong password!</h1>");
+                }
             }
             else
             {
                 res.writeHead(200, {"Content-Type": "text/html"});
-                res.write("<h1>Wrong password!</h1>");
+                res.write("<h1>User does not exist!</h1>");
             }
-        }
-        else
-        {
-            res.writeHead(200, {"Content-Type": "text/html"});
-            res.write("<h1>User does not exist!</h1>");
         }
     }
     else
@@ -166,6 +222,12 @@ async function handlePostRequests(req, res)
     res.end();
 }
 
+/**
+ * Constant that holds the main server instance function.
+ * 
+ * Once a request is received, the server will direct it to the approriate handler function
+ * based on the type of HTTP request.
+ */
 const server = http.createServer((req, res) => {
     switch (req.method)
     {
@@ -192,6 +254,7 @@ const server = http.createServer((req, res) => {
     }
 });
 
+// Start the server listening on the current host and the configured port
 server.listen(config.WEB_SERVER_PORT, () => {
     const { address, port } = server.address();
     console.log(`Web server is listening at ${address}:${port}...`);
